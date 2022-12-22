@@ -6,10 +6,10 @@ import os
 import jsonlines
 from openai.wandb_logger import WandbLogger
 
-with open("questions.csv") as questions_file:
+with open("questions.csv", encoding="UTF_8") as questions_file:
     questions = np.loadtxt(questions_file, dtype=str, delimiter=">")
 
-with open("prompts.csv") as prompts_file:
+with open("prompts.csv", encoding="UTF_8") as prompts_file:
     prompts = np.loadtxt(prompts_file, dtype=str, delimiter="|")
 
 class dataset():
@@ -32,7 +32,7 @@ class dataset():
         with open(self.filename, 'w') as file:
             create = []
             json.dump(create, file, indent = 4)
-    
+
     def dumpData(self):
         with open(self.filename,'r+') as file:
             file_data = json.load(file)
@@ -52,10 +52,10 @@ class dataset():
 class question(dataset):
     def __init__(self, filename):
         super().__init__(filename)
-        
+
     def get_question(self):
         self.question = random.choice(questions)
-    
+
     def writetofile(self):
         if(self.answer == "skip"):
             print("Skipping")
@@ -79,7 +79,7 @@ class prompt(dataset):
     def __init__(self, filename):
         super().__init__(filename)
         self.context = ""
-    
+
     def get_prompt(self):
         self.prompt = random.choice(prompts)
         self.question = self.prompt[1]
@@ -96,7 +96,7 @@ class prompt(dataset):
             "context": "Context: An AI and a human are speaking" + self.context + "\n",
         }
         self.dumpData()
-    
+
     def get_answer(self):
         self.get_prompt()
         while(self.checkdup()):
@@ -118,7 +118,7 @@ class finetunemodel():
                 self.filename = filename + ".json"
                 self.format()
                 self.filename = filename + ".jsonl"
-            else: 
+            else:
                 self.filename = filename + ".jsonl"
         self.epoch = 2
         self.model = "curie"
@@ -133,7 +133,7 @@ class finetunemodel():
                     {'prompt':entry["prompt"], 'completion':entry["completion"]},
                 ]
                 new.write_all(line)
-    
+
     def chgpara(self):
         chgm = input("\nDo you want to change the model? (y/n) ")
         if chgm == "y": self.model = input("Please enter the model name: ")
@@ -151,12 +151,12 @@ class finetunemodel():
         while(self.chgpara()): continue
 
         command = "openai api fine_tunes.create -t " + str(self.filename) + " -m " + self.model + " --suffix " + self.filename.replace(".jsonl", "") + " --n_epochs " + str(self.epoch) + " --learning_rate_multiplier " + str(self.learning_rate)
-        try: 
+        try:
             os.system(str(command))
-        except Exception as e: 
+        except Exception as e:
             print(e)
-        
-        
+
+
 
 
 def datasetcreator():
@@ -177,7 +177,7 @@ def datasetcreator():
 
 
 def finetune():
-    newmodel = finetunemodel() 
+    newmodel = finetunemodel()
     newmodel.finetune()
     WandbLogger.sync(
         id=None,
@@ -186,7 +186,7 @@ def finetune():
         entity=None,
         force=False,
     )
-        
+
 
 
 print("Welcome to the AI dataset generator!")
@@ -194,5 +194,3 @@ usecase = input("Create Dataset (1) or Create Model (2)? ")
 if usecase == "1": datasetcreator()
 else:
     finetune()
-
-        
